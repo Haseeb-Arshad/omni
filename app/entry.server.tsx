@@ -1,7 +1,5 @@
 /**
- * By default, Remix will handle generating the HTTP Response for you.
- * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
- * For more information, see https://remix.run/file-conventions/entry.server
+ * Enhanced server entry point with improved error handling and performance monitoring
  */
 
 import { PassThrough } from "node:stream";
@@ -11,6 +9,7 @@ import { createReadableStreamFromReadable } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
+import { reportError, startPerformanceTimer } from "./lib/monitoring";
 
 const ABORT_DELAY = 5_000;
 
@@ -24,19 +23,33 @@ export default function handleRequest(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   loadContext: AppLoadContext
 ) {
-  return isbot(request.headers.get("user-agent") || "")
-    ? handleBotRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        remixContext
-      )
-    : handleBrowserRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        remixContext
-      );
+  const timer = startPerformanceTimer(`Request: ${request.url}`);
+  
+  // Add security headers
+  responseHeaders.set("X-Frame-Options", "DENY");
+  responseHeaders.set("X-Content-Type-Options", "nosniff");
+  responseHeaders.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  
+  const isBot = isbot(request.headers.get("user-agent") || "");
+  
+  const handleRequestPromise = isBot
+    ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
+    : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext);
+    
+  return handleRequestPromise
+    .then((response) => {
+      timer.end();
+      return response;
+    })
+    .catch((error) => {
+      timer.end();
+      reportError(error, { 
+        context: `Request handling for ${request.url}`,
+        userAgent: request.headers.get("user-agent"),
+        method: request.method,
+      });
+      throw error;
+    });
 }
 
 function handleBotRequest(
@@ -71,6 +84,11 @@ function handleBotRequest(
           pipe(body);
         },
         onShellError(error: unknown) {
+          reportError(error, { 
+            context: `Bot request shell error for ${request.url}`,
+            userAgent: request.headers.get("user-agent"),
+            method: request.method,
+          });
           reject(error);
         },
         onError(error: unknown) {
@@ -79,7 +97,11 @@ function handleBotRequest(
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            console.error(error);
+            reportError(error, { 
+              context: `Bot request streaming error for ${request.url}`,
+              userAgent: request.headers.get("user-agent"),
+              method: request.method,
+            });
           }
         },
       }
@@ -121,6 +143,11 @@ function handleBrowserRequest(
           pipe(body);
         },
         onShellError(error: unknown) {
+          reportError(error, { 
+            context: `Browser request shell error for ${request.url}`,
+            userAgent: request.headers.get("user-agent"),
+            method: request.method,
+          });
           reject(error);
         },
         onError(error: unknown) {
@@ -129,7 +156,11 @@ function handleBrowserRequest(
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
           if (shellRendered) {
-            console.error(error);
+            reportError(error, { 
+              context: `Browser request streaming error for ${request.url}`,
+              userAgent: request.headers.get("user-agent"),
+              method: request.method,
+            });
           }
         },
       }
