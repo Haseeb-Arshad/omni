@@ -150,6 +150,17 @@ export async function refreshAuthToken(refreshToken: string): Promise<{
 // User data fetching
 export async function getCurrentUser(token: string): Promise<User | null> {
   try {
+    // For development - return mock user data
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        id: 'dev-user-123',
+        email: 'dev@example.com',
+        name: 'Development User',
+        avatar: '👨‍💻',
+        role: 'admin'
+      };
+    }
+    
     const response = await fetch(`${process.env.API_BASE_URL}/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -164,6 +175,18 @@ export async function getCurrentUser(token: string): Promise<User | null> {
     return response.json();
   } catch (error) {
     console.error('Failed to fetch user:', error);
+    
+    // Fallback to mock data if API call fails in development
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        id: 'dev-user-123',
+        email: 'dev@example.com',
+        name: 'Development User',
+        avatar: '👨‍💻',
+        role: 'admin'
+      };
+    }
+    
     return null;
   }
 }
@@ -175,6 +198,22 @@ export async function authenticateUser(email: string, password: string): Promise
   refreshToken: string;
 } | null> {
   try {
+    // For development - bypass API call if no backend is running
+    if (process.env.NODE_ENV === 'development') {
+      // Return mock user data for development
+      return {
+        user: {
+          id: 'dev-user-123',
+          email: email,
+          name: 'Development User',
+          avatar: '👨‍💻',
+          role: 'admin'
+        },
+        token: 'dev-token-' + Date.now(),
+        refreshToken: 'dev-refresh-token-' + Date.now()
+      };
+    }
+    
     const response = await fetch(`${process.env.API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
@@ -190,6 +229,22 @@ export async function authenticateUser(email: string, password: string): Promise
     return response.json();
   } catch (error) {
     console.error('Authentication failed:', error);
+    
+    // Fallback to mock data if API call fails in development
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        user: {
+          id: 'dev-user-123',
+          email: email,
+          name: 'Development User',
+          avatar: '👨‍💻',
+          role: 'admin'
+        },
+        token: 'dev-token-' + Date.now(),
+        refreshToken: 'dev-refresh-token-' + Date.now()
+      };
+    }
+    
     return null;
   }
 }
