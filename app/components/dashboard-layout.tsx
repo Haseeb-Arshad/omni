@@ -208,7 +208,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </AnimatePresence>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto relative">
           {navItems.map((item, index) => {
             const isActive = item.href === '/dashboard' 
               ? location.pathname === '/dashboard' 
@@ -219,27 +219,56 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
+                className="relative group"
               >
                 <Link
                   to={item.href}
                   className={cn(
-                    "flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative",
-                    collapsed ? "px-2 py-3 justify-center" : "px-3 py-2",
+                    "flex items-center rounded-xl text-sm font-medium group relative overflow-hidden",
+                    "transition-all duration-300 ease-out",
+                    "before:absolute before:inset-0 before:rounded-xl before:opacity-0 before:transition-all before:duration-300",
+                    "before:bg-gradient-to-r before:from-white/[0.05] before:via-white/[0.06] before:to-white/[0.05]",
+                    "before:backdrop-blur-xl before:border before:border-white/5",
+                    "hover:before:opacity-100 hover:before:shadow-[0_8px_32px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.1)]",
+                    "hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:transform hover:translateY-[1px]",
+                    "active:transform active:translateY-[0px] active:shadow-[0_2px_8px_rgba(59,130,246,0.2)]",
+                    collapsed ? "px-2 py-3 justify-center" : "px-3 py-2.5",
                     isActive
-                      ? "glass text-charcoal-900 shadow-md"
-                      : "text-charcoal-600 hover:glass hover:text-charcoal-900"
+                      ? "text-charcoal-900"
+                      : "text-charcoal-600 hover:text-charcoal-900"
                   )}
                   title={collapsed ? item.label : undefined}
                 >
+                  {/* Glass refraction light line effect */}
+                  <motion.div
+                    className="absolute left-0 top-0 w-[2px] h-full bg-gradient-to-b from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: isActive ? 1 : 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                  
+                  {/* Edge light reflections */}
+                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="absolute top-0 left-2 right-2 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                    <div className="absolute bottom-0 left-2 right-2 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                  </div>
+                  
+                  {/* Icon with enhanced effects */}
                   <div className={cn(
-                    "transition-colors flex-shrink-0",
+                    "relative transition-all duration-300 flex-shrink-0 z-10",
                     collapsed ? "mr-0" : "mr-3",
                     isActive
-                      ? "text-charcoal-900"
-                      : "text-charcoal-400 group-hover:text-charcoal-600"
+                      ? "text-charcoal-900 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
+                      : "text-charcoal-400 group-hover:text-charcoal-700 group-hover:drop-shadow-[0_1px_2px_rgba(59,130,246,0.2)]"
                   )}>
-                    {item.icon}
+                    <div className={cn(
+                      "relative",
+                      isActive && "backdrop-blur-sm"
+                    )}>
+                      {item.icon}
+                    </div>
                   </div>
+                  
                   <AnimatePresence>
                     {!collapsed && (
                       <motion.span
@@ -247,19 +276,50 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="truncate"
+                        className="truncate relative z-10 font-medium"
                       >
                         {item.label}
                       </motion.span>
                     )}
                   </AnimatePresence>
+                  
+                  {/* Active state background with smooth morph */}
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl -z-10"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="absolute inset-0 rounded-xl -z-10"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.06) 100%)",
+                        backdropFilter: "blur(20px)",
+                        WebkitBackdropFilter: "blur(20px)",
+                        border: "none",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.06)"
+                      }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 400, 
+                        damping: 30,
+                        duration: 0.6
+                      }}
                     />
                   )}
+                  
+                  {/* Hover shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 -z-10 rounded-xl opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)",
+                      backgroundSize: "200% 200%"
+                    }}
+                    animate={{
+                      backgroundPosition: ["0% 0%", "200% 200%"]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  />
                 </Link>
               </motion.div>
             );
@@ -287,22 +347,47 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: (navItems.length + index) * 0.1 }}
+                className="relative group"
               >
                 <Link
                   to={item.href}
                   className={cn(
-                    "flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative",
+                    "flex items-center rounded-xl text-sm font-medium group relative overflow-hidden",
+                    "transition-all duration-300 ease-out",
+                    "before:absolute before:inset-0 before:rounded-xl before:opacity-0 before:transition-all before:duration-300",
+                    "before:bg-gradient-to-r before:from-white/[0.09] before:via-white/[0.1] before:to-white/[0.09]",
+                    "before:backdrop-blur-xl before:border before:border-white/5",
+                    "hover:before:opacity-100 hover:before:shadow-[0_6px_24px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.05)]",
+                    "hover:shadow-[0_3px_16px_rgba(0,0,0,0.05)] hover:transform hover:translateY-[0.5px]",
                     collapsed ? "px-2 py-3 justify-center" : "px-3 py-2",
-                    "text-charcoal-600 hover:glass hover:text-charcoal-900"
+                    "text-charcoal-600 hover:text-charcoal-900"
                   )}
                   title={collapsed ? item.label : undefined}
                 >
-                  <div className={cn(
-                    "text-charcoal-400 group-hover:text-charcoal-600 transition-colors flex-shrink-0",
-                    collapsed ? "mr-0" : "mr-3"
-                  )}>
-                    {item.icon}
+                  {/* Glass refraction effect for tools */}
+                  <motion.div
+                    className="absolute left-0 top-0 w-[1px] h-full bg-gradient-to-b from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  />
+                  
+                  {/* Subtle edge highlights */}
+                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="absolute top-0 left-2 right-2 h-[0.5px] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
                   </div>
+
+                  <div className={cn(
+                    "relative transition-all duration-300 flex-shrink-0 z-10",
+                    collapsed ? "mr-0" : "mr-3",
+                    "text-charcoal-400 group-hover:text-charcoal-700 group-hover:drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
+                  )}>
+                    <div className="relative">
+                      {item.icon}
+                      {/* Subtle icon glow */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-[1px] -z-10">
+                        {item.icon}
+                      </div>
+                    </div>
+                  </div>
+                  
                   <AnimatePresence>
                     {!collapsed && (
                       <motion.span
@@ -310,17 +395,39 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         animate={{ opacity: 1, width: "auto" }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="truncate"
+                        className="truncate relative z-10 font-medium"
                       >
                         {item.label}
                       </motion.span>
                     )}
                   </AnimatePresence>
+                  
                   {item.badge && !collapsed && (
-                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-sm">
+                    <motion.span 
+                      className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-sm relative z-10"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
                       {item.badge}
-                    </span>
+                    </motion.span>
                   )}
+                  
+                  {/* Hover shimmer for tools */}
+                  <motion.div
+                    className="absolute inset-0 -z-10 rounded-xl opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: "linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.03) 50%, transparent 60%)",
+                      backgroundSize: "200% 200%"
+                    }}
+                    animate={{
+                      backgroundPosition: ["0% 0%", "200% 200%"]
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  />
                 </Link>
               </motion.div>
             ))}
